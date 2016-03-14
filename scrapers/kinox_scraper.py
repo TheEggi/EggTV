@@ -1,3 +1,5 @@
+import HTMLParser
+import json
 import re
 from urlparse import urljoin
 
@@ -6,18 +8,20 @@ from bs4 import BeautifulSoup
 
 from scrapers.basescraper import BaseScraper
 from shared.constants import Language, VideoType
+from shared.hosterurl import HosterUrl
 from shared.noresultsfounderror import NoResultsFoundError
 from shared.urlwithparam import UrlWithParam
 from shared.video import Video
 
-BASE_URL = 'https://kinox.tv/'
+BASE_URL = 'http://kinox.tv/'
 
 
 class KinoxScraper(BaseScraper):
     _search_pattern = re.compile(r'/gr/sys/lng/([0-9]+).png')
     _find_seasonselect = re.compile(r'.*Addr=(.+)&amp;.*?SeriesID=([0-9]+)', flags=re.DOTALL)
     _find_episodes = re.compile(r'.*?rel="(.+?)&amp;Hoster=([0-9]+)&amp;.*?class="Named">(.*?)</div>.*?class="Data">.+?[0-9]+/([0-9]+?)<br/>', flags=re.DOTALL)
-
+    _find_hoster = re.compile(r'.*<a href="(.+?)"')
+    _html_parser = HTMLParser.HTMLParser()
     def get_name(cls):
         return 'Kinox.tv'
 
@@ -62,13 +66,8 @@ class KinoxScraper(BaseScraper):
             'Episode': video.episode
         }
         resp = requests.get(BASE_URL + 'aGET/MirrorByEpisode/', params=params)
-
-        fix = resp.content
-        iterate = self._find_episodes.findall(resp.content)
-        video.urls = []
-        for match in iterate:
+        for match in self._find_episodes.findall(resp.content):
             series, hoster_id, hoster_name, maxEpisode = match
-
             params = {
                 'Hoster': hoster_id,
                 'Season': video.season,
@@ -77,12 +76,21 @@ class KinoxScraper(BaseScraper):
             for mirror in range(1, int(maxEpisode) + 1):
                 params['Mirror'] = mirror
                 urlwithparam = UrlWithParam(BASE_URL + 'aGET/Mirror/' + series, params)
-                video.urls.append(urlwithparam)
+                video.link_urls.append(urlwithparam)
 
         return video
 
     def get_sources(self, video):
-        pass
+        for v in video.link_urls:
+            result = requests.get(v.url, v.param)
+            json_data = json.loads(result.content)
+            stream = json_data['Stream']
+            hoster = json_data['HosterName']
+            link = self._find_hoster.match(stream).group(1)
+            video.hoster_urls.append(HosterUrl(hoster, link))
+
+        return video
+
 
     def _map_type(self, title):
         if title == 'series':
