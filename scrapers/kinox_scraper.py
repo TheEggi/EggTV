@@ -7,13 +7,17 @@ from bs4 import BeautifulSoup
 from scrapers.basescraper import BaseScraper
 from shared.constants import Language, VideoType
 from shared.noresultsfounderror import NoResultsFoundError
+from shared.urlwithparam import UrlWithParam
 from shared.video import Video
 
 BASE_URL = 'https://kinox.tv/'
 
 
 class KinoxScraper(BaseScraper):
-    _find_pattern = re.compile(r'/gr/sys/lng/([0-9]+).png')
+    _search_pattern = re.compile(r'/gr/sys/lng/([0-9]+).png')
+    _find_seasonselect = re.compile(r'.*Addr=(.+)&amp;.*?SeriesID=([0-9]+)', flags=re.DOTALL)
+    _find_episodes = re.compile(r'.*?rel="(.+?)&amp;Hoster=([0-9]+)&amp;.*?class="Named">(.*?)</div>.*?class="Data">.+?[0-9]+/([0-9]+?)<br/>', flags=re.DOTALL)
+
     def get_name(cls):
         return 'Kinox.tv'
 
@@ -30,7 +34,7 @@ class KinoxScraper(BaseScraper):
         results = []
         for row in rows:
             img = row.find('img', alt='language')
-            language = self._find_pattern.match(img['src']).group(1)
+            language = self._search_pattern.match(img['src']).group(1)
             language = int(language)
             language = self._map_flag_to_language(language)
             type = row.find('img', alt='type')['title']
@@ -41,13 +45,41 @@ class KinoxScraper(BaseScraper):
             url = urljoin(BASE_URL, alinkrow['href'])
             year = spanrow.text
             rating = row.find('td', class_='Rating').text
-            results.append(Video(url=url, rating=rating, language=language))
+            results.append(
+                Video(title=title, season=season, episode=episode, url=url, rating=rating, language=language))
         if not results:
             raise NoResultsFoundError
         return results
 
     def get_links(self, video):
-        pass
+        resp = requests.get(video.url)
+        matches = self._find_seasonselect.match(resp.content)
+        addr, series_id = matches.groups()
+        params = {
+            'Addr': addr,
+            'SeriesID': series_id,
+            'Season': video.season,
+            'Episode': video.episode
+        }
+        resp = requests.get(BASE_URL + 'aGET/MirrorByEpisode/', params=params)
+
+        fix = resp.content
+        iterate = self._find_episodes.findall(resp.content)
+        video.urls = []
+        for match in iterate:
+            series, hoster_id, hoster_name, maxEpisode = match
+
+            params = {
+                'Hoster': hoster_id,
+                'Season': video.season,
+                'Episode': video.episode
+            }
+            for mirror in range(1, int(maxEpisode) + 1):
+                params['Mirror'] = mirror
+                urlwithparam = UrlWithParam(BASE_URL + 'aGET/Mirror/' + series, params)
+                video.urls.append(urlwithparam)
+
+        return video
 
     def get_sources(self, video):
         pass

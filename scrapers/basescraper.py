@@ -50,6 +50,7 @@ class BaseScraper(object):
         """
         raise NotImplementedError
 
+    @abc.abstractmethod
     def get_links(self, video):
         """
         Evaluates the links returned from search and parses the result into
