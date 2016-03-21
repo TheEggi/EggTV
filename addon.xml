@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--suppress ALL -->
+<addon id="plugin.video.eggtv" version="2.0.5" name="EggTV" provider-name="TheEggi">
+    <requires>
+        <import addon="xbmc.python" version="2.1.0"/>
+        <import addon="script.module.urlresolver" version="2.2.0"/>
+    </requires>
+    <extension point="xbmc.python.pluginsource" library="default.py">
+        <provides>video</provides>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary>Stream videos in multiple languages</summary>
+        <description>Addon uses simkl.com for to get its metadata.</description>
+        <platform>all</platform>
+    </extension>
+</addon>
