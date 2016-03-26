@@ -10,7 +10,7 @@ from shared.constants import VideoType
 class TestStringMethods(unittest.TestCase):
     def test_kinox_search(self):
         start_time = time.time()
-        scraper = KinoxScraper();
+        scraper = KinoxScraper()
         kinox = KinoxScraper.search(scraper, VideoType.TV, 'Game of Thrones', None, None)
         self.assertGreater(len(kinox), 1, 'no results found')
         self.assertTrue(any(x.language == Language.de and re.match(
