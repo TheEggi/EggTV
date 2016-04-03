@@ -17,8 +17,8 @@ def dispatcher_function(mode=None):
     def decorator(func):
         # mark the method as something that requires view's class
         func.mode = mode or 'None'
-        log_util.log('function %s added with mode %s' % (func.__name__, mode))
-        registry[mode] = func
+        log_util.log('function %s added with mode %s' % (func.__name__, func.mode))
+        registry[func.mode] = func
         return func
     return decorator
 

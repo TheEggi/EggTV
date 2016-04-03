@@ -1,3 +1,6 @@
+import functools
+import time
+
 import xbmc
 import xbmcaddon
 
@@ -29,3 +32,17 @@ def log(msg, level=LOGNOTICE):
             xbmc.log('Logging Failure: %s' % (e), level)
         except:
             raise
+
+
+def log_function(func):
+    @functools.wraps(func)
+    def log_wrap(*args, **kwargs):
+        start = time.time()
+        log('>> Enter {func} with *args: {args}, **kwargs: {kwargs}'.format(**{'func': func.__name__,
+                                                                               'args': args,
+                                                                               'kwargs': kwargs}))
+        func(*args, **kwargs)
+        log('<< Exit {func} after {time}'.format(**{'func': func.__name__,
+                                                    'time': start - time.time()}))
+
+    return log_wrap
