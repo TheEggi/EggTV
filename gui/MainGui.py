@@ -3,11 +3,11 @@ import urllib
 import xbmcgui
 import xbmcplugin
 from gui.uiconstants import Modes
+from shared import kodi
 from shared import log_util
-from shared.kodi import i18n, get_keyboard, notify
+from shared.kodi import get_keyboard
 from shared.log_util import log_function
 from shared.urldispatcher import dispatcher_function
-from shared import kodi
 
 
 class MainGui(object):
@@ -39,7 +39,7 @@ class MainGui(object):
         log_util.log('WHAT?!')
         heading = 'SEARCH YOUR SHIT'
         search_text = get_keyboard(heading)
-        notify(header='Your shit:', msg=search_text)
+
 
     @log_function
     def build_url(self, query):
