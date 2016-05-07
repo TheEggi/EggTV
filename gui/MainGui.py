@@ -1,12 +1,11 @@
 import urllib
 
-import xbmcgui
-import xbmcplugin
 from gui.uiconstants import Modes
 from shared import kodi
 from shared import log_util
 from shared.kodi import get_keyboard
 from shared.log_util import log_function
+from shared.trakthelper import TraktHelper
 from shared.urldispatcher import dispatcher_function
 
 
@@ -29,10 +28,18 @@ class MainGui(object):
 
     @dispatcher_function(mode=Modes.MOVIES.value)
     def movies(self):
-        url = self.build_url({'mode': Modes.MOVIES + Modes.SEARCH})
+        movies = TraktHelper.getmovies()
+        for movie in movies:
+            firstimage = movie.images_url['thumb']['full']
+            kodi.create_item({'mode': Modes.MOVIES, 'section': 'test'}, movie.title, thumb=firstimage,
+                             fanart=firstimage)
+        kodi.end_of_directory()
+
+        """url = self.build_url({'mode': Modes.MOVIES + Modes.SEARCH})
         li = xbmcgui.ListItem('foldername' + ' Video', iconImage='DefaultVideo.png')
         xbmcplugin.addDirectoryItem(handle=self.addon_handle, url=url, listitem=li)
         xbmcplugin.endOfDirectory(self.addon_handle)
+        """
 
     @dispatcher_function(mode=Modes.SEARCH.value)
     def search(self):
